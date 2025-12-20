@@ -64,3 +64,7 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.scriv]
+version = "literal: pyproject.toml: project.version"
+format = "md"
