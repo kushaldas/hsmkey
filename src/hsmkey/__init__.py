@@ -24,7 +24,6 @@ Example usage:
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
 
 from .config import HSMConfig, find_softhsm_module, get_softhsm_conf
 from .exceptions import (
