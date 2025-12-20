@@ -9,7 +9,7 @@ HSMKey provides key implementations that perform all cryptographic operations on
 ## Features
 
 - **Drop-in replacement** - Keys implement `cryptography` library interfaces
-- **Secure by design** - Private keys cannot be exported from HSM
+- Private keys cannot be exported from HSM
 - **Full algorithm support**:
   - RSA (2048, 3072, 4096 bits) - PKCS#1 v1.5 and PSS signing, OAEP decryption
   - ECDSA (P-256, P-384, P-521)
