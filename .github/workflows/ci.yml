@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run type checker
+        run: uv run ty check src/
+        continue-on-error: true  # pkcs11 library lacks type stubs
+
+  test-softhsm:
+    name: Test with SoftHSM2
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y softhsm2 opensc
+
+      - name: Install Python dependencies
+        run: uv sync --dev
+
+      - name: Setup SoftHSM2 config
+        run: just ensure-softhsm-config
+
+      - name: Import keys to SoftHSM2
+        run: |
+          export SOFTHSM2_CONF="$HOME/.config/softhsm/softhsm2.conf"
+          just import-keys
+
+      - name: Run tests with SoftHSM2
+        run: |
+          export SOFTHSM2_CONF="$HOME/.config/softhsm/softhsm2.conf"
+          just test
+
+  test-kryoptic:
+    name: Test with Kryoptic
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opensc libsqlite3-dev pkg-config libssl-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache Kryoptic build
+        uses: actions/cache@v4
+        with:
+          path: ~/kryoptic/target
+          key: kryoptic-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            kryoptic-${{ runner.os }}-
+
+      - name: Build Kryoptic
+        run: |
+          cd ~
+          if [ ! -d "kryoptic" ]; then
+            git clone https://github.com/latchset/kryoptic.git
+          fi
+          cd kryoptic
+          # Build without EdDSA (requires OpenSSL 3.2+, Ubuntu has 3.0.x)
+          cargo build --release --no-default-features --features "sqlitedb,aes,ecdsa,ecdh,ffdh,hash,hmac,hkdf,pbkdf2,rsa,sp800_108,dynamic"
+
+      - name: Install Python dependencies
+        run: uv sync --dev
+
+      - name: Setup Kryoptic config
+        run: |
+          export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
+          just ensure-kryoptic-config
+
+      - name: Import keys to Kryoptic
+        run: |
+          export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
+          just import-keys-kryoptic
+
+      - name: Run tests with Kryoptic
+        run: |
+          export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
+          just test-kryoptic
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test-softhsm, test-kryoptic]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build package
+        run: uv build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
