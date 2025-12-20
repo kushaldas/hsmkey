@@ -36,6 +36,7 @@ dev = [
     "ty",
     "ruff",
     "flit",
+    "scriv",
 ]
 
 [build-system]
