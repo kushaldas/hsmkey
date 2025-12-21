@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/hsmkey/badge/?version=latest)](https://hsmkey.readthedocs.io/en/latest/?badge=latest)
 
-HSM-backed cryptographic keys compatible with Python's [cryptography](https://cryptography.io/) library.
+HSM-backed cryptographic keys compatible with Python's [cryptography](https://cryptography.io/) and [jwcrypto](https://jwcrypto.readthedocs.io/en/latest/) library.
 
 **Documentation:** [https://hsmkey.readthedocs.io](https://hsmkey.readthedocs.io)
 
