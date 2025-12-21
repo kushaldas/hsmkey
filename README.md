@@ -1,6 +1,10 @@
 # HSMKey
 
+[![Documentation Status](https://readthedocs.org/projects/hsmkey/badge/?version=latest)](https://hsmkey.readthedocs.io/en/latest/?badge=latest)
+
 HSM-backed cryptographic keys compatible with Python's [cryptography](https://cryptography.io/) library.
+
+**Documentation:** [https://hsmkey.readthedocs.io](https://hsmkey.readthedocs.io)
 
 ## Overview
 
@@ -193,6 +197,17 @@ just test            # Run tests
 just list-keys       # List keys in HSM
 just reset           # Reset everything
 ```
+
+## Documentation
+
+Full documentation is available at [https://hsmkey.readthedocs.io](https://hsmkey.readthedocs.io), including:
+
+- [Installation Guide](https://hsmkey.readthedocs.io/en/latest/installation.html)
+- [Quick Start](https://hsmkey.readthedocs.io/en/latest/quickstart.html)
+- [Key Classes Reference](https://hsmkey.readthedocs.io/en/latest/keys.html)
+- [JWCrypto Integration](https://hsmkey.readthedocs.io/en/latest/jwcrypto.html)
+- [Session Management](https://hsmkey.readthedocs.io/en/latest/session_management.html)
+- [API Reference](https://hsmkey.readthedocs.io/en/latest/api.html)
 
 ## License
 

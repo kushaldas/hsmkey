@@ -2,10 +2,10 @@ hsmkey Documentation
 ====================
 
 **hsmkey** is a Python library that provides HSM-backed cryptographic keys
-compatible with the Python cryptography library and jwcrypto. It allows you
-to use Hardware Security Module (HSM) keys for signing, verification,
-encryption, and decryption operations while keeping private keys secure
-within the HSM.
+compatible with the Python cryptography library and `jwcrypto
+<https://jwcrypto.readthedocs.io/en/latest/>`_. It allows you to use Hardware
+Security Module (HSM) keys for signing, verification, encryption, and
+decryption operations while keeping private keys secure within the HSM.
 
 Key Features
 ------------
