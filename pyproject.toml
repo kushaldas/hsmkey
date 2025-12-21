@@ -30,6 +30,9 @@ Source='https://github.com/kushaldas/hsmkey'
 Documentation = "https://hsmkey.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
+jwcrypto = [
+    "jwcrypto>=1.5.0",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
@@ -37,6 +40,12 @@ dev = [
     "ruff",
     "flit",
     "scriv",
+    "jwcrypto>=1.5.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=2.0.0",
 ]
 
 [build-system]

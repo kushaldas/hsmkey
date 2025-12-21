@@ -8,11 +8,15 @@ from typing import Iterator
 import pytest
 
 from hsmkey import SessionPool
+from hsmkey.exceptions import HSMKeyNotFoundError
 
 # HSM Configuration from environment or defaults
 HSM_MODULE = os.environ.get("HSM_MODULE", "/usr/lib/softhsm/libsofthsm2.so")
 HSM_TOKEN_LABEL = os.environ.get("HSM_TOKEN_LABEL", "hsmkey-test")
 HSM_PIN = os.environ.get("HSM_PIN", "12345678")
+
+# Check if EdDSA keys are available (not available with Kryoptic on older OpenSSL)
+EDDSA_AVAILABLE = os.environ.get("EDDSA_AVAILABLE", "true").lower() == "true"
 
 # Key labels matching justfile import
 RSA_2048_LABEL = "rsa-2048"
@@ -111,3 +115,27 @@ def ed25519_key_id() -> bytes:
 def ed448_key_id() -> bytes:
     """Ed448 key ID."""
     return bytes([0x09])
+
+
+@pytest.fixture
+def eddsa_available() -> bool:
+    """Check if EdDSA keys are available in the HSM."""
+    return EDDSA_AVAILABLE
+
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line(
+        "markers", "requires_eddsa: mark test as requiring EdDSA key support"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip EdDSA tests when EdDSA keys are not available."""
+    if EDDSA_AVAILABLE:
+        return
+
+    skip_eddsa = pytest.mark.skip(reason="EdDSA keys not available (Kryoptic without OpenSSL 3.2+)")
+    for item in items:
+        if "requires_eddsa" in item.keywords:
+            item.add_marker(skip_eddsa)

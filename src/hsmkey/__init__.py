@@ -49,6 +49,18 @@ from .keys import (
     PKCS11Ed448PublicKey,
 )
 
+# JWK integration (optional - requires jwcrypto)
+try:
+    from .jwk_integration import (
+        HSMJWK,
+        HSMJWKSet,
+        jwk_from_hsm,
+        hsm_session,
+    )
+    _HAS_JWCRYPTO = True
+except ImportError:
+    _HAS_JWCRYPTO = False
+
 __all__ = [
     # Version
     "__version__",
@@ -79,3 +91,12 @@ __all__ = [
     "PKCS11Ed448PrivateKey",
     "PKCS11Ed448PublicKey",
 ]
+
+# Add JWK integration exports if jwcrypto is available
+if _HAS_JWCRYPTO:
+    __all__.extend([
+        "HSMJWK",
+        "HSMJWKSet",
+        "jwk_from_hsm",
+        "hsm_session",
+    ])
