@@ -368,7 +368,7 @@ import-keys-kryoptic: init-kryoptic
         --write-object "$PUB_DIR/ec-p521.pem" --type pubkey \
         --label "ec-p521" --id 03 --usage-sign 2>/dev/null || true
 
-    echo "Note: EdDSA keys not imported (kryoptic requires OpenSSL 3.2+)"
+    echo "Note: EdDSA keys not imported. Use 'just import-eddsa-kryoptic' if you have OpenSSL 3.2+"
 
     echo "Listing imported keys..."
     pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
@@ -376,14 +376,57 @@ import-keys-kryoptic: init-kryoptic
 
     echo "Keys imported successfully"
 
+# Import EdDSA keys to kryoptic (requires OpenSSL 3.2+ and kryoptic built with eddsa feature)
+import-eddsa-kryoptic:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    PRIV_DIR="{{KEY_DIR}}/privatekeys"
+    PUB_DIR="{{KEY_DIR}}/publickeys"
+    MODULE="{{KRYOPTIC_MODULE}}"
+
+    # Check if EdDSA keys exist
+    if [ ! -f "$PRIV_DIR/ed25519.pem" ] || [ ! -f "$PRIV_DIR/ed448.pem" ]; then
+        echo "EdDSA keys not found. Run 'just recreate-keys' first."
+        exit 1
+    fi
+
+    echo "Importing EdDSA keys to kryoptic (requires OpenSSL 3.2+)..."
+
+    echo "Importing Ed25519..."
+    pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
+        --login --pin "{{PIN}}" \
+        --write-object "$PRIV_DIR/ed25519.pem" --type privkey \
+        --label "ed25519" --id 08 --usage-sign 2>/dev/null || echo "Ed25519 private key import failed (OpenSSL 3.2+ required)"
+    pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
+        --login --pin "{{PIN}}" \
+        --write-object "$PUB_DIR/ed25519.pem" --type pubkey \
+        --label "ed25519" --id 08 --usage-sign 2>/dev/null || echo "Ed25519 public key import failed"
+
+    echo "Importing Ed448..."
+    pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
+        --login --pin "{{PIN}}" \
+        --write-object "$PRIV_DIR/ed448.pem" --type privkey \
+        --label "ed448" --id 09 --usage-sign 2>/dev/null || echo "Ed448 private key import failed (OpenSSL 3.2+ required)"
+    pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
+        --login --pin "{{PIN}}" \
+        --write-object "$PUB_DIR/ed448.pem" --type pubkey \
+        --label "ed448" --id 09 --usage-sign 2>/dev/null || echo "Ed448 public key import failed"
+
+    echo "EdDSA keys import attempted. Check 'just list-keys-kryoptic' to verify."
+
 # List keys in kryoptic
 list-keys-kryoptic:
     pkcs11-tool --module "{{KRYOPTIC_MODULE}}" --token-label "{{TOKEN_LABEL}}" \
         --login --pin "{{PIN}}" -O
 
-# Run tests against kryoptic (skips EdDSA tests)
+# Run tests against kryoptic (skips EdDSA tests - for systems without OpenSSL 3.2+)
 test-kryoptic:
-    HSM_MODULE="{{KRYOPTIC_MODULE}}" HSM_PIN="{{PIN}}" uv run pytest tests/ -v --ignore=tests/test_ed25519.py --ignore=tests/test_ed448.py
+    HSM_MODULE="{{KRYOPTIC_MODULE}}" HSM_PIN="{{PIN}}" EDDSA_AVAILABLE=false uv run pytest tests/ -v --ignore=tests/test_ed25519.py --ignore=tests/test_ed448.py
+
+# Run full tests against kryoptic with EdDSA (requires OpenSSL 3.2+ and kryoptic built with eddsa feature)
+test-kryoptic-full:
+    HSM_MODULE="{{KRYOPTIC_MODULE}}" HSM_PIN="{{PIN}}" uv run pytest tests/ -v
 
 # Clean kryoptic storage
 clean-kryoptic:
@@ -398,3 +441,13 @@ setup-kryoptic: recreate-keys import-keys-kryoptic
 # Full test: run against both SoftHSM2 and kryoptic
 test-all: reset test clean-kryoptic setup-kryoptic test-kryoptic
     @echo "All tests complete!"
+
+# ============ Documentation ============
+
+# Build Sphinx documentation
+docs:
+    cd docs && uv run make html
+
+# Serve documentation locally
+docs-serve: docs
+    cd docs/_build/html && python3 -m http.server 8000

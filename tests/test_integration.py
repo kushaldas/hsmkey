@@ -314,6 +314,7 @@ class TestKeyTypes:
             assert public["kty"] == "EC"
             assert public["crv"] == expected_crv
 
+    @pytest.mark.requires_eddsa
     def test_all_eddsa_curves(self, hsm_session):
         """Test all EdDSA curves."""
         curves = {
@@ -391,6 +392,7 @@ class TestPublicKeyExport:
         assert "y" in public
         assert "d" not in public
 
+    @pytest.mark.requires_eddsa
     def test_export_okp_public_key(self, hsm_session):
         """Test exporting OKP (Ed25519) public key."""
         key = HSMJWK.from_hsm(hsm_session, key_label="ed25519")

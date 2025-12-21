@@ -293,6 +293,8 @@ class TestJWEDecryptionErrors:
 
     def test_tampered_ciphertext_fails(self, hsm_session):
         """Test that tampered ciphertext fails verification."""
+        import base64
+
         key = HSMJWK.from_hsm(hsm_session, key_label="rsa-2048")
 
         jwe = JWE(
@@ -302,9 +304,25 @@ class TestJWEDecryptionErrors:
         jwe.add_recipient(key)
         token = jwe.serialize(compact=True)
 
-        # Tamper with the ciphertext
+        # Tamper with the ciphertext by flipping bits in actual bytes
         parts = token.split(".")
-        parts[3] = "A" + parts[3][1:]  # Modify ciphertext
+        ciphertext_b64 = parts[3]
+        # Add padding for proper base64 decoding
+        padding = 4 - len(ciphertext_b64) % 4
+        if padding != 4:
+            ciphertext_b64_padded = ciphertext_b64 + "=" * padding
+        else:
+            ciphertext_b64_padded = ciphertext_b64
+        ciphertext = base64.urlsafe_b64decode(ciphertext_b64_padded)
+        # Flip bits in the middle of the ciphertext
+        tampered = bytearray(ciphertext)
+        if len(tampered) > 10:
+            tampered[5] ^= 0xFF
+            tampered[10] ^= 0xFF
+        else:
+            tampered[0] ^= 0xFF
+        # Re-encode
+        parts[3] = base64.urlsafe_b64encode(bytes(tampered)).rstrip(b"=").decode()
         tampered_token = ".".join(parts)
 
         jwe2 = JWE()

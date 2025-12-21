@@ -115,8 +115,8 @@ jobs:
           export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
           just ensure-kryoptic-config
           just import-keys-kryoptic
-          # Skip EdDSA tests (kryoptic requires OpenSSL 3.2+)
-          HSM_MODULE="$KRYOPTIC_MODULE" uv run pytest tests/ -v --ignore=tests/test_ed25519.py --ignore=tests/test_ed448.py
+          # Skip EdDSA tests (kryoptic requires OpenSSL 3.2+ for EdDSA support)
+          HSM_MODULE="$KRYOPTIC_MODULE" EDDSA_AVAILABLE=false uv run pytest tests/ -v --ignore=tests/test_ed25519.py --ignore=tests/test_ed448.py
 
   build:
     name: Build Package

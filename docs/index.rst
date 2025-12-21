@@ -57,6 +57,12 @@ Contents
 
    api
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+
+   development
+
 
 Indices and tables
 ==================

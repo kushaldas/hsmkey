@@ -187,6 +187,7 @@ class TestJWSECDSASigning:
         assert jws2.payload == TEST_PAYLOAD
 
 
+@pytest.mark.requires_eddsa
 class TestJWSEdDSASigning:
     """Test JWS signing with EdDSA HSM keys."""
 

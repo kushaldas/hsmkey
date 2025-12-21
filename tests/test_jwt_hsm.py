@@ -68,6 +68,7 @@ class TestJWTSigning:
         serialized = token.serialize()
         assert serialized is not None
 
+    @pytest.mark.requires_eddsa
     def test_jwt_eddsa_sign(self, hsm_session):
         """Test JWT signing with EdDSA (Ed25519)."""
         key = HSMJWK.from_hsm(hsm_session, key_label="ed25519")
@@ -121,6 +122,7 @@ class TestJWTVerification:
         verified_claims = json.loads(token2.claims)
         assert verified_claims["sub"] == "user@example.com"
 
+    @pytest.mark.requires_eddsa
     def test_jwt_eddsa_verify(self, hsm_session):
         """Test JWT verification with EdDSA."""
         key = HSMJWK.from_hsm(hsm_session, key_label="ed25519")
