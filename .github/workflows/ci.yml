@@ -92,13 +92,18 @@ jobs:
       - name: Cache Kryoptic build
         uses: actions/cache@v4
         with:
-          path: ~/kryoptic/target
-          key: kryoptic-${{ runner.os }}-${{ github.run_id }}
+          path: ~/kryoptic
+          key: kryoptic-${{ runner.os }}-v1
           restore-keys: |
             kryoptic-${{ runner.os }}-
 
       - name: Build Kryoptic
         run: |
+          # Skip build if binary already exists from cache
+          if [ -f "$HOME/kryoptic/target/release/libkryoptic_pkcs11.so" ]; then
+            echo "Kryoptic binary found in cache, skipping build"
+            exit 0
+          fi
           cd ~
           if [ ! -d "kryoptic" ]; then
             git clone https://github.com/latchset/kryoptic.git
