@@ -18,14 +18,14 @@ jobs:
           version: "latest"
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
 
       - name: Run type checker
         run: uv run ty check src/
-        continue-on-error: true  # pkcs11 library lacks type stubs
+        continue-on-error: true # pkcs11 library lacks type stubs
 
   test-softhsm:
     name: Test with SoftHSM2
@@ -43,7 +43,7 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
 
       - name: Install system dependencies
         run: |
@@ -51,20 +51,14 @@ jobs:
           sudo apt-get install -y softhsm2 opensc
 
       - name: Install Python dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
 
-      - name: Setup SoftHSM2 config
-        run: just ensure-softhsm-config
-
-      - name: Import keys to SoftHSM2
+      - name: Setup SoftHSM2 and run tests
         run: |
           export SOFTHSM2_CONF="$HOME/.config/softhsm/softhsm2.conf"
+          just ensure-softhsm-config
           just import-keys
-
-      - name: Run tests with SoftHSM2
-        run: |
-          export SOFTHSM2_CONF="$HOME/.config/softhsm/softhsm2.conf"
-          just test
+          uv run pytest tests/ -v
 
   test-kryoptic:
     name: Test with Kryoptic
@@ -82,15 +76,18 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y opensc libsqlite3-dev pkg-config libssl-dev
 
-      - name: Install Rust
-        uses: dtolnay/rust-action@stable
+      - name: Setup rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          components: rustfmt, clippy
+          toolchain: stable
 
       - name: Cache Kryoptic build
         uses: actions/cache@v4
@@ -111,22 +108,15 @@ jobs:
           cargo build --release --no-default-features --features "sqlitedb,aes,ecdsa,ecdh,ffdh,hash,hmac,hkdf,pbkdf2,rsa,sp800_108,dynamic"
 
       - name: Install Python dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
 
-      - name: Setup Kryoptic config
+      - name: Setup Kryoptic and run tests
         run: |
           export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
           just ensure-kryoptic-config
-
-      - name: Import keys to Kryoptic
-        run: |
-          export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
           just import-keys-kryoptic
-
-      - name: Run tests with Kryoptic
-        run: |
-          export KRYOPTIC_MODULE="$HOME/kryoptic/target/release/libkryoptic_pkcs11.so"
-          just test-kryoptic
+          # Skip EdDSA tests (kryoptic requires OpenSSL 3.2+)
+          HSM_MODULE="$KRYOPTIC_MODULE" uv run pytest tests/ -v --ignore=tests/test_ed25519.py --ignore=tests/test_ed448.py
 
   build:
     name: Build Package
