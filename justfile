@@ -374,6 +374,10 @@ import-keys-kryoptic: init-kryoptic
 
     echo "Note: EdDSA keys not imported. Use 'just import-eddsa-kryoptic' if you have OpenSSL 3.2+"
 
+    # Generate HMAC keys in HSM
+    echo "Generating HMAC keys..."
+    HSM_MODULE="$MODULE" uv run python scripts/generate_hmac_keys.py
+
     echo "Listing imported keys..."
     pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
         --login --pin "{{PIN}}" -O 2>/dev/null | grep -E "(label:|ID:|Usage:)" || true
