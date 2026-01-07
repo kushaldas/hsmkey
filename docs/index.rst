@@ -11,7 +11,8 @@ Key Features
 ------------
 
 - **JWCrypto Integration**: Seamless integration with jwcrypto for JWS, JWE, and JWT operations
-- **Multiple Key Types**: Support for RSA, ECDSA (P-256, P-384, P-521), and EdDSA (Ed25519, Ed448)
+- **Multiple Key Types**: Support for RSA, ECDSA (P-256, P-384, P-521), EdDSA (Ed25519, Ed448), and HMAC
+- **HMAC Support**: HMAC-SHA1, HMAC-SHA256, HMAC-SHA384, HMAC-SHA512 for message authentication
 - **PKCS#11 Compatible**: Works with any PKCS#11-compatible HSM (SoftHSM2, Kryoptic, etc.)
 - **Thread-Safe**: Session pool for safe concurrent access
 - **Private Key Protection**: Private keys never leave the HSM

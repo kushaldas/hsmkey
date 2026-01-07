@@ -259,6 +259,140 @@ Ed448 public key extracted from HSM. Implements ``cryptography.hazmat.primitives
     # Get raw public key bytes (57 bytes)
     raw_bytes = public_key.public_bytes_raw()
 
+HMAC Keys
+^^^^^^^^^
+
+**PKCS11HMACKey**
+
+HMAC (Hash-based Message Authentication Code) key backed by HSM. This class
+provides HMAC operations using a secret key stored in the HSM. Unlike asymmetric
+keys, HMAC uses a single symmetric key for both signing (MAC generation) and
+verification.
+
+HMAC is commonly used for:
+
+- Message authentication (ensuring message integrity and authenticity)
+- API authentication (e.g., HMAC-based API signatures)
+- Key derivation functions
+- Session tokens
+
+.. code-block:: python
+
+    from hsmkey import SessionPool, PKCS11HMACKey
+    from cryptography.hazmat.primitives import hashes
+
+    pool = SessionPool(
+        module_path="/usr/lib/softhsm/libsofthsm2.so",
+        token_label="my-token",
+        user_pin="1234"
+    )
+
+    with pool.session() as session:
+        # Load HMAC key by label
+        key = PKCS11HMACKey(session, key_label="hmac-sha256")
+
+        # Or by ID
+        key = PKCS11HMACKey(session, key_id=bytes([0x21]))
+
+        # Compute HMAC-SHA256
+        data = b"message to authenticate"
+        mac = key.sign(data, hashes.SHA256())
+        print(f"MAC: {mac.hex()}")
+
+        # Verify HMAC (raises HSMOperationError if verification fails)
+        key.verify(data, mac, hashes.SHA256())
+
+**Supported Hash Algorithms:**
+
+- ``hashes.SHA1()`` - HMAC-SHA1 (160-bit output)
+- ``hashes.SHA224()`` - HMAC-SHA224 (224-bit output)
+- ``hashes.SHA256()`` - HMAC-SHA256 (256-bit output)
+- ``hashes.SHA384()`` - HMAC-SHA384 (384-bit output)
+- ``hashes.SHA512()`` - HMAC-SHA512 (512-bit output)
+
+**Example: HMAC-SHA1**
+
+.. code-block:: python
+
+    from hsmkey import SessionPool, PKCS11HMACKey
+    from cryptography.hazmat.primitives import hashes
+
+    pool = SessionPool(...)
+
+    with pool.session() as session:
+        key = PKCS11HMACKey(session, key_label="hmac-sha1")
+
+        # Compute HMAC-SHA1
+        mac = key.sign(b"data", hashes.SHA1())
+        assert len(mac) == 20  # SHA-1 produces 160-bit output
+
+        # Verify
+        key.verify(b"data", mac, hashes.SHA1())
+
+**Example: HMAC-SHA256**
+
+.. code-block:: python
+
+    from hsmkey import SessionPool, PKCS11HMACKey
+    from cryptography.hazmat.primitives import hashes
+
+    pool = SessionPool(...)
+
+    with pool.session() as session:
+        key = PKCS11HMACKey(session, key_label="hmac-sha256")
+
+        # Compute HMAC-SHA256
+        mac = key.sign(b"data", hashes.SHA256())
+        assert len(mac) == 32  # SHA-256 produces 256-bit output
+
+        # Verify
+        key.verify(b"data", mac, hashes.SHA256())
+
+**Verification Failure:**
+
+When HMAC verification fails (e.g., data was tampered with or wrong MAC),
+the ``verify()`` method raises ``HSMOperationError``:
+
+.. code-block:: python
+
+    from hsmkey.exceptions import HSMOperationError
+
+    try:
+        key.verify(b"tampered data", original_mac, hashes.SHA256())
+    except HSMOperationError:
+        print("MAC verification failed - data may have been tampered with")
+
+**Generating HMAC Keys:**
+
+HMAC keys must be generated directly in the HSM (they cannot be imported from
+PEM files like asymmetric keys). Use the provided script:
+
+.. code-block:: bash
+
+    # Generate test HMAC keys in the HSM
+    uv run python scripts/generate_hmac_keys.py
+
+Or generate programmatically:
+
+.. code-block:: python
+
+    import pkcs11
+    from pkcs11 import Attribute, KeyType, ObjectClass
+
+    with token.open(rw=True, user_pin=pin) as session:
+        template = {
+            Attribute.CLASS: ObjectClass.SECRET_KEY,
+            Attribute.KEY_TYPE: KeyType.GENERIC_SECRET,
+            Attribute.TOKEN: True,
+            Attribute.PRIVATE: True,
+            Attribute.SENSITIVE: True,
+            Attribute.SIGN: True,
+            Attribute.VERIFY: True,
+            Attribute.LABEL: "my-hmac-key",
+            Attribute.VALUE_LEN: 32,  # 256 bits
+        }
+        session.generate_key(KeyType.GENERIC_SECRET, 256, template=template)
+
 Base Class
 ----------
 
@@ -346,4 +480,8 @@ The following table summarizes algorithm support for each key type:
 | Ed25519                | EdDSA (built-in hashing)         | N/A                       |
 +------------------------+----------------------------------+---------------------------+
 | Ed448                  | EdDSA (built-in hashing)         | N/A                       |
++------------------------+----------------------------------+---------------------------+
+| HMAC                   | HMAC-SHA1, HMAC-SHA224,          | N/A                       |
+|                        | HMAC-SHA256, HMAC-SHA384,        |                           |
+|                        | HMAC-SHA512                      |                           |
 +------------------------+----------------------------------+---------------------------+

@@ -54,6 +54,15 @@ HASH_DIGEST_SIZES: dict[type[hashes.HashAlgorithm], int] = {
     hashes.SHA512: 64,
 }
 
+# HMAC mechanisms
+HMAC_MECHANISMS: dict[type[hashes.HashAlgorithm], Mechanism] = {
+    hashes.SHA1: Mechanism.SHA_1_HMAC,
+    hashes.SHA224: Mechanism.SHA224_HMAC,
+    hashes.SHA256: Mechanism.SHA256_HMAC,
+    hashes.SHA384: Mechanism.SHA384_HMAC,
+    hashes.SHA512: Mechanism.SHA512_HMAC,
+}
+
 
 def get_rsa_sign_mechanism(
     padding_instance: padding.AsymmetricPadding,

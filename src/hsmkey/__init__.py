@@ -47,6 +47,7 @@ from .keys import (
     PKCS11Ed25519PublicKey,
     PKCS11Ed448PrivateKey,
     PKCS11Ed448PublicKey,
+    PKCS11HMACKey,
 )
 
 # JWK integration (optional - requires jwcrypto)
@@ -90,6 +91,8 @@ __all__ = [
     # Ed448 Keys
     "PKCS11Ed448PrivateKey",
     "PKCS11Ed448PublicKey",
+    # HMAC Keys
+    "PKCS11HMACKey",
 ]
 
 # Add JWK integration exports if jwcrypto is available
