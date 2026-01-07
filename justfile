@@ -227,6 +227,10 @@ import-keys: init-hsm
     echo "Importing Ed25519 and Ed448 keys..."
     uv run python scripts/import_eddsa_keys.py
 
+    # Generate HMAC keys in HSM
+    echo "Generating HMAC keys..."
+    uv run python scripts/generate_hmac_keys.py
+
     echo "Listing imported keys..."
     pkcs11-tool --module "$MODULE" --token-label "{{TOKEN_LABEL}}" \
         --login --pin "{{PIN}}" -O 2>/dev/null | grep -E "(label:|ID:|type:)" || true
